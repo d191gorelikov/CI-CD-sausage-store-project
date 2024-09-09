@@ -1,0 +1,70 @@
+version: "3.8"
+
+services:
+  backend-blue:
+    image: ${CI_REGISTRY_IMAGE}/sausage-backend:${VERSION}
+    environment:
+      # Переменные из application.properties можно заменить переменными окружеия
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${SPRING_DATASOURCE_HOST}:${SPRING_DATASOURCE_PORT}/${SPRING_DATASOURCE_DATABASE}
+      SPRING_DATA_MONGODB_URI: ${REPORTS_MONGODB_URI}
+      VIRTUAL_HOST: backend
+      VIRTUAL_PORT: 8080
+    restart: always  
+    networks:
+      - sausage-store 
+    healthcheck:
+      test: curl --fail -s http://localhost:8080/actuator/health
+      interval: 10s
+      timeout: 10s
+      start_period: 30s
+      retries: 6   
+  backend-green:
+    image: ${CI_REGISTRY_IMAGE}/sausage-backend:${VERSION}
+    environment:
+      # Переменные из application.properties можно заменить переменными окружеия
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${SPRING_DATASOURCE_HOST}:${SPRING_DATASOURCE_PORT}/${SPRING_DATASOURCE_DATABASE}
+      SPRING_DATA_MONGODB_URI: ${REPORTS_MONGODB_URI}
+      VIRTUAL_HOST: backend
+      VIRTUAL_PORT: 8080
+    restart: always  
+    networks:
+      - sausage-store 
+    healthcheck:
+      test: curl --fail -s http://localhost:8080/actuator/health
+      interval: 10s
+      timeout: 10s
+      start_period: 30s
+      retries: 6          
+
+  backend-report:
+    image: ${CI_REGISTRY_IMAGE}/sausage-backend-report:${VERSION}
+    container_name: sausage-store-backend-report
+    restart: always
+    environment:
+      PORT: 8080
+      DB: ${REPORTS_MONGODB_URI}
+    networks:
+      - sausage-store
+
+     
+  frontend:
+    image: ${CI_REGISTRY_IMAGE}/sausage-frontend:${VERSION}
+    container_name: sausage-store-frontend
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    restart: always
+    networks:
+      - sausage-store
+    environment:
+       DEFAULT_HOST: backend  
+
+networks:
+  sausage-store: 
+
+#  
